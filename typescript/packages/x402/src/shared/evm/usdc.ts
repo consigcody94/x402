@@ -14,7 +14,15 @@ export function getUsdcAddress<
   chain extends Chain | undefined = undefined,
   account extends Account | undefined = undefined,
 >(client: Client<transport, chain, account>): Address {
-  return config[client.chain!.id.toString()].usdcAddress as Address;
+  const chainId = client.chain?.id;
+  if (!chainId) {
+    throw new Error("Client chain is not defined");
+  }
+  const chainConfig = config[chainId.toString()];
+  if (!chainConfig) {
+    throw new Error(`No USDC configuration found for chain ${chainId}`);
+  }
+  return chainConfig.usdcAddress as Address;
 }
 
 /**
@@ -25,7 +33,11 @@ export function getUsdcAddress<
  * @returns The USDC contract address for the specified chain
  */
 export function getUsdcAddressForChain(chainId: number): Address {
-  return config[chainId.toString()].usdcAddress as Address;
+  const chainConfig = config[chainId.toString()];
+  if (!chainConfig) {
+    throw new Error(`No USDC configuration found for chain ${chainId}`);
+  }
+  return chainConfig.usdcAddress as Address;
 }
 
 /**

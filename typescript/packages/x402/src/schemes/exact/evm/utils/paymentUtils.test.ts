@@ -67,7 +67,7 @@ describe("paymentUtils", () => {
       network: "invalid-network",
     } as unknown as PaymentPayload;
     const encoded = Buffer.from(JSON.stringify(invalid)).toString("base64");
-    expect(() => decodePayment(encoded)).toThrow("Invalid network");
+    expect(() => decodePayment(encoded)).toThrow("Unsupported network");
   });
 
   it("throws on invalid base64 in decodePayment", () => {

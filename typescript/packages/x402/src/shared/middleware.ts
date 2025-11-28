@@ -33,7 +33,9 @@ export function computeRoutePatterns(routes: RoutesConfig): RoutePattern[] {
 
   return Object.entries(normalizedRoutes).map(([pattern, routeConfig]) => {
     // Split pattern into verb and path, defaulting to "*" for verb if not specified
-    const [verb, path] = pattern.includes(" ") ? pattern.split(/\s+/) : ["*", pattern];
+    const parts = pattern.includes(" ") ? pattern.split(/\s+/) : ["*", pattern];
+    const verb = parts[0] ?? "*";
+    const path = parts[1];
     if (!path) {
       throw new Error(`Invalid route pattern: ${pattern}`);
     }
@@ -77,7 +79,7 @@ export function findMatchingRoute(
   let normalizedPath: string;
   try {
     // First split off query parameters and hash fragments
-    const pathWithoutQuery = path.split(/[?#]/)[0];
+    const pathWithoutQuery = path.split(/[?#]/)[0] ?? path;
 
     // Then decode the path - this needs to happen before any normalization
     // so encoded characters are properly handled
@@ -194,17 +196,49 @@ export function findMatchingPaymentRequirements(
 }
 
 /**
+ * Response from the X-PAYMENT-RESPONSE header
+ */
+export interface PaymentResponse {
+  success: boolean;
+  transaction: Hex;
+  network: Network;
+  payer: Address;
+}
+
+/**
  * Decodes the X-PAYMENT-RESPONSE header
  *
  * @param header - The X-PAYMENT-RESPONSE header to decode
  * @returns The decoded payment response
+ * @throws {Error} If the header cannot be decoded or parsed
  */
-export function decodeXPaymentResponse(header: string) {
+export function decodeXPaymentResponse(header: string): PaymentResponse {
   const decoded = safeBase64Decode(header);
-  return JSON.parse(decoded) as {
-    success: boolean;
-    transaction: Hex;
-    network: Network;
-    payer: Address;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(decoded);
+  } catch (error) {
+    throw new Error(
+      `Failed to parse payment response: ${error instanceof Error ? error.message : "Invalid JSON"}`,
+    );
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Payment response must be a valid object");
+  }
+
+  const response = parsed as Record<string, unknown>;
+
+  if (typeof response.success !== "boolean") {
+    throw new Error("Payment response missing required 'success' field");
+  }
+
+  // Validate and return as PaymentResponse
+  return {
+    success: response.success,
+    transaction: response.transaction as Hex,
+    network: response.network as Network,
+    payer: response.payer as Address,
   };
 }

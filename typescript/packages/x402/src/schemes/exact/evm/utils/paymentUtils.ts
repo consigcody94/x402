@@ -1,5 +1,5 @@
 import { safeBase64Encode, safeBase64Decode } from "../../../../shared";
-import { SupportedEVMNetworks, SupportedSVMNetworks } from "../../../../types";
+import { Network, SupportedEVMNetworks, SupportedSVMNetworks } from "../../../../types";
 import {
   PaymentPayload,
   PaymentPayloadSchema,
@@ -48,29 +48,49 @@ export function encodePayment(payment: PaymentPayload): string {
  *
  * @param payment - The base64 encoded payment string to decode
  * @returns The decoded and validated PaymentPayload object
+ * @throws {Error} If the payment string is malformed or cannot be parsed
  */
 export function decodePayment(payment: string): PaymentPayload {
   const decoded = safeBase64Decode(payment);
-  const parsed = JSON.parse(decoded);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(decoded);
+  } catch (error) {
+    throw new Error(
+      `Failed to parse payment payload: ${error instanceof Error ? error.message : "Invalid JSON"}`,
+    );
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Payment payload must be a valid object");
+  }
+
+  const payloadObj = parsed as Record<string, unknown>;
+  if (!payloadObj.network || typeof payloadObj.network !== "string") {
+    throw new Error("Payment payload missing required 'network' field");
+  }
 
   let obj: PaymentPayload;
 
+  const networkValue = payloadObj.network as Network;
+
   // evm
-  if (SupportedEVMNetworks.includes(parsed.network)) {
+  if (SupportedEVMNetworks.includes(networkValue)) {
     obj = {
-      ...parsed,
-      payload: parsed.payload as ExactEvmPayload,
-    };
+      ...payloadObj,
+      payload: payloadObj.payload as ExactEvmPayload,
+    } as PaymentPayload;
   }
 
   // svm
-  else if (SupportedSVMNetworks.includes(parsed.network)) {
+  else if (SupportedSVMNetworks.includes(networkValue)) {
     obj = {
-      ...parsed,
-      payload: parsed.payload as ExactSvmPayload,
-    };
+      ...payloadObj,
+      payload: payloadObj.payload as ExactSvmPayload,
+    } as PaymentPayload;
   } else {
-    throw new Error("Invalid network");
+    throw new Error(`Unsupported network: ${payloadObj.network}`);
   }
 
   const validated = PaymentPayloadSchema.parse(obj);

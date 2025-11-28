@@ -198,8 +198,16 @@ export async function verifyTransactionInstructions(
   }
 
   // verify that the compute limit and price instructions are valid
-  verifyComputeLimitInstruction(transactionMessage.instructions[0]);
-  verifyComputePriceInstruction(transactionMessage.instructions[1]);
+  const computeLimitInstruction = transactionMessage.instructions[0];
+  const computePriceInstruction = transactionMessage.instructions[1];
+  const transferInstruction = transactionMessage.instructions[2];
+
+  if (!computeLimitInstruction || !computePriceInstruction || !transferInstruction) {
+    throw new Error(`invalid_exact_svm_payload_transaction_instructions`);
+  }
+
+  verifyComputeLimitInstruction(computeLimitInstruction);
+  verifyComputePriceInstruction(computePriceInstruction);
 
   // verify that the fee payer is not included in any instruction's accounts
   transactionMessage.instructions.forEach(instruction => {
@@ -212,12 +220,7 @@ export async function verifyTransactionInstructions(
 
   // verify that the transfer instruction is valid
   // this expects the destination ATA to already exist
-  await verifyTransferInstruction(
-    transactionMessage.instructions[2],
-    paymentRequirements,
-    signer,
-    rpc,
-  );
+  await verifyTransferInstruction(transferInstruction, paymentRequirements, signer, rpc);
 }
 
 /**

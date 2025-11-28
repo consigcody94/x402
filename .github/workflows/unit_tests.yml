@@ -21,8 +21,78 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: ./typescript
 
-      - name: Install and Test
+      - name: Install and Test with Coverage
         working-directory: ./typescript
         run: |
           pnpm install --frozen-lockfile
-          pnpm run test
+          pnpm run test -- --coverage
+
+      - name: Upload coverage reports
+        if: matrix.node-version == '22'
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./typescript/coverage
+          fail_ci_if_error: false
+          verbose: true
+
+  test-x402-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: ./python/x402
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests with coverage
+        working-directory: ./python/x402
+        run: |
+          pytest --cov=x402 --cov-report=xml
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript, python
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: ./typescript
+
+      - name: Install dependencies
+        working-directory: ./typescript
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        working-directory: ./typescript
+        run: pnpm audit --audit-level=high
+        continue-on-error: true

@@ -66,10 +66,17 @@ export function wrapFetchWithPayment(
       return response;
     }
 
-    const { x402Version, accepts } = (await response.json()) as {
+    const responseBody = (await response.json()) as {
       x402Version: number;
       accepts: unknown[];
+      error?: string;
     };
+
+    if (!responseBody.accepts || !Array.isArray(responseBody.accepts)) {
+      throw new Error(responseBody.error || "Invalid 402 response: missing payment requirements");
+    }
+
+    const { x402Version, accepts } = responseBody;
     const parsedPaymentRequirements = accepts.map(x => PaymentRequirementsSchema.parse(x));
 
     const network = isMultiNetworkSigner(walletClient)

@@ -48,7 +48,10 @@ export function createCorrelationHeader(): string {
     source_version: X402_SDK_VERSION,
   };
   return Object.keys(data)
-    .map(key => `${key}=${encodeURIComponent(data[key])}`)
+    .map(key => {
+      const value = data[key];
+      return `${key}=${encodeURIComponent(value ?? "")}`;
+    })
     .join(",");
 }
 

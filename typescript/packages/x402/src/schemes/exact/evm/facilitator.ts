@@ -81,7 +81,8 @@ export async function verify<
   let version: string;
   try {
     chainId = getNetworkId(payload.network);
-    name = paymentRequirements.extra?.name ?? config[chainId.toString()].usdcName;
+    const chainConfig = config[chainId.toString()];
+    name = paymentRequirements.extra?.name ?? chainConfig?.usdcName ?? "USD Coin";
     erc20Address = paymentRequirements.asset as Address;
     version = paymentRequirements.extra?.version ?? (await getVersion(client));
   } catch {

@@ -118,9 +118,17 @@ export function paymentMiddleware(
 
     let paymentRequirements: PaymentRequirements[] = [];
 
-    // TODO: create a shared middleware function to build payment requirements
     // evm networks
     if (SupportedEVMNetworks.includes(network)) {
+      const requestStructure = {
+        input: {
+          type: "http" as const,
+          method: req.method.toUpperCase(),
+          discoverable: discoverable ?? true,
+          ...inputSchema,
+        },
+        output: outputSchema,
+      };
       paymentRequirements.push({
         scheme: "exact",
         network,
@@ -131,16 +139,7 @@ export function paymentMiddleware(
         payTo: getAddress(payTo),
         maxTimeoutSeconds: maxTimeoutSeconds ?? 60,
         asset: getAddress(asset.address),
-        // TODO: Rename outputSchema to requestStructure
-        outputSchema: {
-          input: {
-            type: "http",
-            method: req.method.toUpperCase(),
-            discoverable: discoverable ?? true,
-            ...inputSchema,
-          },
-          output: outputSchema,
-        },
+        outputSchema: requestStructure,
         extra: (asset as ERC20TokenAmount["asset"]).eip712,
       });
     }
@@ -164,6 +163,15 @@ export function paymentMiddleware(
         throw new Error(`The facilitator did not provide a fee payer for network: ${network}.`);
       }
 
+      const requestStructure = {
+        input: {
+          type: "http" as const,
+          method: req.method.toUpperCase(),
+          discoverable: discoverable ?? true,
+          ...inputSchema,
+        },
+        output: outputSchema,
+      };
       paymentRequirements.push({
         scheme: "exact",
         network,
@@ -174,16 +182,7 @@ export function paymentMiddleware(
         payTo: payTo,
         maxTimeoutSeconds: maxTimeoutSeconds ?? 60,
         asset: asset.address,
-        // TODO: Rename outputSchema to requestStructure
-        outputSchema: {
-          input: {
-            type: "http",
-            method: req.method.toUpperCase(),
-            discoverable: discoverable ?? true,
-            ...inputSchema,
-          },
-          output: outputSchema,
-        },
+        outputSchema: requestStructure,
         extra: {
           feePayer,
         },
@@ -198,7 +197,6 @@ export function paymentMiddleware(
     const isWebBrowser = acceptHeader.includes("text/html") && userAgent.includes("Mozilla");
 
     if (!payment) {
-      // TODO handle paywall html for solana
       if (isWebBrowser) {
         let displayAmount: number;
         if (typeof price === "string" || typeof price === "number") {
@@ -220,7 +218,7 @@ export function paymentMiddleware(
               typeof getPaywallHtml
             >[0]["paymentRequirements"],
             currentUrl: req.originalUrl,
-            testnet: network === "base-sepolia",
+            testnet: network === "base-sepolia" || network === "solana-devnet",
             cdpClientKey: paywall?.cdpClientKey,
             appName: paywall?.appName,
             appLogo: paywall?.appLogo,

@@ -160,6 +160,21 @@ class PaymentMiddleware:
                     # Fallback to request.url if the header is not present
                     resource_url = config["resource"] or request.url
 
+                # Build request structure for API documentation
+                request_structure = {
+                    "input": {
+                        "type": "http",
+                        "method": request.method.upper(),
+                        "discoverable": config.get("discoverable", True),
+                        **(
+                            config["input_schema"].model_dump()
+                            if config["input_schema"]
+                            else {}
+                        ),
+                    },
+                    "output": config["output_schema"],
+                }
+
                 # Construct payment details
                 payment_requirements = [
                     PaymentRequirements(
@@ -172,20 +187,7 @@ class PaymentMiddleware:
                         mime_type=config["mime_type"],
                         pay_to=config["pay_to_address"],
                         max_timeout_seconds=config["max_deadline_seconds"],
-                        # TODO: Rename output_schema to request_structure
-                        output_schema={
-                            "input": {
-                                "type": "http",
-                                "method": request.method.upper(),
-                                "discoverable": config.get("discoverable", True),
-                                **(
-                                    config["input_schema"].model_dump()
-                                    if config["input_schema"]
-                                    else {}
-                                ),
-                            },
-                            "output": config["output_schema"],
-                        },
+                        output_schema=request_structure,
                         extra=eip712_domain,
                     )
                 ]

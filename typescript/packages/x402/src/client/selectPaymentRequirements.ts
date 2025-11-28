@@ -30,15 +30,21 @@ export function selectPaymentRequirements(paymentRequirements: PaymentRequiremen
   });
 
   // Prioritize USDC requirements if available
-  if (usdcRequirements.length > 0) {
-    return usdcRequirements[0];
+  const firstUsdcRequirement = usdcRequirements[0];
+  if (firstUsdcRequirement) {
+    return firstUsdcRequirement;
   }
   // If no USDC requirements are found, return the first broadly accepted requirement.
-  if (broadlyAcceptedPaymentRequirements.length > 0) {
-    return broadlyAcceptedPaymentRequirements[0];
+  const firstBroadlyAccepted = broadlyAcceptedPaymentRequirements[0];
+  if (firstBroadlyAccepted) {
+    return firstBroadlyAccepted;
   }
   // If no matching requirements are found, return the first requirement.
-  return paymentRequirements[0];
+  const firstRequirement = paymentRequirements[0];
+  if (!firstRequirement) {
+    throw new Error("No payment requirements provided");
+  }
+  return firstRequirement;
 }
 
 /**

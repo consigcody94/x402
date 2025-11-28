@@ -96,6 +96,17 @@ def require_payment(
         # Get resource URL if not explicitly provided
         resource_url = resource or str(request.url)
 
+        # Build request structure for API documentation
+        request_structure = {
+            "input": {
+                "type": "http",
+                "method": request.method.upper(),
+                "discoverable": discoverable if discoverable is not None else True,
+                **(input_schema.model_dump() if input_schema else {}),
+            },
+            "output": output_schema,
+        }
+
         # Construct payment details
         payment_requirements = [
             PaymentRequirements(
@@ -108,18 +119,7 @@ def require_payment(
                 mime_type=mime_type,
                 pay_to=pay_to_address,
                 max_timeout_seconds=max_deadline_seconds,
-                # TODO: Rename output_schema to request_structure
-                output_schema={
-                    "input": {
-                        "type": "http",
-                        "method": request.method.upper(),
-                        "discoverable": discoverable
-                        if discoverable is not None
-                        else True,
-                        **(input_schema.model_dump() if input_schema else {}),
-                    },
-                    "output": output_schema,
-                },
+                output_schema=request_structure,
                 extra=eip712_domain,
             )
         ]

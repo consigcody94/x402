@@ -1,14 +1,16 @@
-# x402 payments protocol
+# x402 Payment Protocol
 
-> "1 line of code to accept digital dollars. No fees, 2-second settlement, $0.001 minimum payment."
+> **Internet-native payments in one line of code.** Zero fees, 2-second settlement, $0.001 minimum.
 
 ```typescript
-app.use(
-  // How much you want to charge, and where you want the funds to land
-  paymentMiddleware("0xYourAddress", { "/your-endpoint": "$0.01" })
-);
-// That's it! See examples/typescript/servers/express/index.ts for a complete example. Instruction below for running on base-sepolia.
+import { paymentMiddleware } from "x402-express";
+
+app.use(paymentMiddleware("0xYourAddress", { "/api/*": "$0.01" }));
 ```
+
+[![CI](https://github.com/coinbase/x402/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/coinbase/x402/actions)
+[![npm version](https://badge.fury.io/js/x402.svg)](https://www.npmjs.com/package/x402)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ## Philosophy
 
@@ -266,10 +268,40 @@ Clients and facilitators must explicitly support different `(scheme, network)` p
 
 You should see activities in the client terminal, which will display a weather report.
 
-## Running tests
+## Running Tests
 
-1. Navigate to the typescript directory: `cd typescript`
-2. Install dependencies: `pnpm install`
-3. Run the unit tests: `pnpm test`
+```bash
+# TypeScript
+cd typescript && pnpm install && pnpm test
 
-This will run the unit tests for the x402 packages.
+# Python
+cd python/x402 && pip install -e ".[dev]" && pytest
+
+# With coverage
+pnpm test -- --coverage
+```
+
+## Supported Networks
+
+| Network | Chain | Status |
+|---------|-------|--------|
+| Base | EVM | Production |
+| Base Sepolia | EVM | Testnet |
+| Solana | SVM | Production |
+| Solana Devnet | SVM | Testnet |
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+
+## License
+
+Apache 2.0 - See [LICENSE](LICENSE) for details.

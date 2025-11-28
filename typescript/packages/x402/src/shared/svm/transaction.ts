@@ -55,7 +55,10 @@ export function getTokenPayerFromTransaction(transaction: Transaction): string {
 
   for (const ix of instructions) {
     const programIndex = ix.programAddressIndex;
-    const programAddress = staticAccounts[programIndex].toString();
+    const programAccount = staticAccounts[programIndex];
+    if (!programAccount) continue;
+
+    const programAddress = programAccount.toString();
     if (
       programAddress === TOKEN_PROGRAM_ADDRESS.toString() ||
       programAddress === TOKEN_2022_PROGRAM_ADDRESS.toString()
@@ -64,7 +67,10 @@ export function getTokenPayerFromTransaction(transaction: Transaction): string {
       if (accountIndices.length >= 4) {
         // TransferChecked account order: [source, mint, destination, owner, ...]
         const ownerIndex = accountIndices[3];
-        const ownerAddress = staticAccounts[ownerIndex].toString();
+        if (ownerIndex === undefined) continue;
+        const ownerAccount = staticAccounts[ownerIndex];
+        if (!ownerAccount) continue;
+        const ownerAddress = ownerAccount.toString();
         if (ownerAddress) return ownerAddress;
       }
     }
